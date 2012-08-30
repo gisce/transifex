@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, re
-import glob
+import os
+import re
 from codecs import BOM
 
 from setuptools import setup, find_packages
@@ -21,6 +21,7 @@ package_data = {
     '': ['LICENCE', 'README.rst'],
     'transifex': ['transifex/static/*.*']
 }
+
 
 def get_requirements(filename):
     """
@@ -51,6 +52,7 @@ def get_requirements(filename):
 
 requirements, dependency_links = get_requirements('requirements.txt')
 
+
 def buildlanguages():
     import django.core.management.commands.compilemessages as c
     oldpath = os.getcwd()
@@ -58,6 +60,7 @@ def buildlanguages():
         'locale'))
     c.compile_messages()
     os.chdir(oldpath)
+
 
 class build_py(_build_py):
     def run(self):
@@ -70,7 +73,8 @@ setup(
 #    },
     name="transifex",
     version=version,
-    description="The software behind Transifex.net, the open service to collaboratively translate software, documentation and websites.",
+    description="The software behind Transifex.net, the open service to "
+    "collaboratively translate software, documentation and websites.",
     long_description=long_description,
     author="The Transifex community and the staff of Indifex",
     author_email="transifex-devel@googlegroups.com",
@@ -81,11 +85,11 @@ setup(
     zip_safe=False,
     packages=find_packages(),
     include_package_data=True,
-    package_data = package_data,
-    keywords = (
+    package_data=package_data,
+    keywords=(
         'django.app',
         'translation localization internationalization vcs',),
-    classifiers = [line for line in '''
+    classifiers=[line for line in '''
 Development Status :: 5 - Production/Stable
 Environment :: Web Environment
 Framework :: Django
