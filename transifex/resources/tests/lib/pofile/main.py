@@ -393,6 +393,24 @@ class TestPoFile(FormatsBaseTestCase):
 class TestPoFileHeaders(FormatsBaseTestCase):
     """Test PO File library support for PO file headers."""
 
+    ERP_POT_WITHOUT_HEADER = u'''#: model:ir.model.fields,field_description:test.field_name
+msgid "Field name"
+msgstr ""
+
+#: model:ir.model.fields,field_description:test.field_other
+msgid "Other field"
+msgstr ""
+'''
+
+    POT_WITH_PARTIAL_HEADER = u'''msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=ISO-8859-1\\n"
+
+#: model:ir.model.fields,field_description:test.field_name
+msgid "Field name"
+msgstr ""
+'''
+
     def _load_pot(self):
         test_file = os.path.join(TEST_FILES_PATH, 'test.pot')
         # First empty our resource
@@ -424,6 +442,32 @@ class TestPoFileHeaders(FormatsBaseTestCase):
         self.assertTrue("Portuguese (Brazil)" in pofile)
         self.assertFalse(self.urls['team'] in pofile)
         self.assertTrue(self.team.mainlist in pofile)
+
+    def test_pot_without_gettext_header_is_valid(self):
+        """ERP exports may omit the gettext metadata header."""
+        handler = POTHandler(content=self.ERP_POT_WITHOUT_HEADER)
+        handler.is_content_valid()
+        self.assertEqual(
+            handler._po.metadata['Content-Type'],
+            'text/plain; charset=UTF-8'
+        )
+        self.assertEqual(
+            handler._po.metadata['Content-Transfer-Encoding'],
+            '8bit'
+        )
+
+    def test_pot_with_partial_gettext_header_is_valid(self):
+        """Missing gettext metadata is completed without replacing values."""
+        handler = POTHandler(content=self.POT_WITH_PARTIAL_HEADER)
+        handler.is_content_valid()
+        self.assertEqual(
+            handler._po.metadata['Content-Type'],
+            'text/plain; charset=ISO-8859-1'
+        )
+        self.assertEqual(
+            handler._po.metadata['Content-Transfer-Encoding'],
+            '8bit'
+        )
 
 
 class TestPoFileCopyright(FormatsBaseTestCase):
