@@ -158,13 +158,13 @@ $(function(){
 {% endif %}
 
   {% if statslist %}
-  <table class="stats-table tablesorter langdetail">
+  <table class="stats-table langdetail">
   <thead>
     <tr>
-      <th class="onlyarrow tableobject"></th>
-      <th class="onlyarrow tablecompletion"></th>
-      <th class="onlyarrow tablelastupd"></th>
-      <th class="onlyarrow priority_level"></th>
+      <th class="onlyarrow tableobject"><a href="{{ language_stats_sort_urls.name }}" title="{% trans "Sort by resource name" %}">&nbsp;</a></th>
+      <th class="onlyarrow tablecompletion"><a href="{{ language_stats_sort_urls.completion }}" title="{% trans "Sort by translation progress" %}">&nbsp;</a></th>
+      <th class="onlyarrow tablelastupd"><a href="{{ language_stats_sort_urls.last_update }}" title="{% trans "Sort by last update" %}">&nbsp;</a></th>
+      <th class="onlyarrow priority_level"><a href="{{ language_stats_sort_urls.priority }}" title="{% trans "Sort by priority" %}">&nbsp;</a></th>
     </tr>
   </thead>
   <tbody id="stat-row-container">

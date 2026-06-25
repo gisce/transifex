@@ -3,6 +3,7 @@ from django.test.client import Client
 from django.contrib.auth.models import User
 
 from languages.models import Language
+from transifex.resources.models import Resource, RLStats, SourceEntity
 from transifex.teams.models import TeamRequest, TeamAccessRequest
 from transifex.teams.models import Team
 from txcommon.tests import base, utils
@@ -21,6 +22,52 @@ class TestTeams(base.BaseTestCase):
         url = reverse('team_detail', args=[self.project.slug, self.language.code])
         resp = self.client['registered'].get(url)
         self.assertContains(resp, '(Brazil)', status_code=200)
+
+    def _create_resource_with_stats(self, slug, name, total, translated):
+        resource = Resource.objects.create(
+            slug=slug, name=name, project=self.project, i18n_type='PO')
+        for i in range(total):
+            SourceEntity.objects.create(
+                string='%s string %s' % (slug, i), context='Context%s' % i,
+                occurrences='Occurrences%s' % i, resource=resource)
+        resource.update_total_entities()
+
+        stats = RLStats.objects.get(resource=resource, language=self.language)
+        stats.translated = translated
+        stats.untranslated = total - translated
+        stats._calculate_perc()
+        stats.save(update=False)
+        return resource
+
+    def test_team_details_sorts_completion_globally_before_paginating(self):
+        for i in range(16):
+            self._create_resource_with_stats(
+                'full-%02d' % i, 'Full %02d' % i, 10, 10)
+        zero_resource = self._create_resource_with_stats(
+            'aaa-zero', 'AAA Zero', 10, 0)
+        RLStats.objects.filter(resource=zero_resource,
+            language=self.language).delete()
+
+        url = reverse('team_detail', args=[self.project.slug, self.language.code])
+        resp = self.client['registered'].get(url)
+
+        self.assertContains(resp, 'AAA Zero', status_code=200)
+        first_page = list(resp.context['statslist'])
+        first_page_slugs = [stat.resource.slug for stat in first_page]
+        self.assertIn('aaa-zero', first_page_slugs)
+
+    def test_team_details_sorts_resources_by_name_on_server(self):
+        self._create_resource_with_stats('zzz-resource', 'ZZZ Resource', 10, 0)
+        self._create_resource_with_stats('aaa-resource', 'AAA Resource', 100, 100)
+
+        url = reverse('team_detail', args=[self.project.slug, self.language.code])
+        resp = self.client['registered'].get(url, {'sort': 'name', 'dir': 'asc'})
+
+        self.assertContains(resp, 'AAA Resource', status_code=200)
+        first_page = list(resp.context['statslist'])
+        first_page_slugs = [stat.resource.slug for stat in first_page]
+        self.assertTrue(first_page_slugs.index('aaa-resource') <
+            first_page_slugs.index('zzz-resource'))
 
     def test_create_team(self):
         """Test a successful team creation."""
