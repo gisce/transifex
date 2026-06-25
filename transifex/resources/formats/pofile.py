@@ -86,6 +86,17 @@ class GettextHandler(SimpleCompilerFactory, Handler):
     HandlerParseError = PoParseError
     HandlerCompileError = PoCompileError
 
+    default_metadata = {
+        'Content-Type': 'text/plain; charset=UTF-8',
+        'Content-Transfer-Encoding': '8bit',
+    }
+
+    def _ensure_default_metadata(self, po):
+        """Accept ERP-generated PO/POT files without a gettext header."""
+        for metadata, value in self.default_metadata.items():
+            if metadata not in po.metadata:
+                po.metadata[metadata] = value
+
     def _check_content(self, content):
         try:
             po = polib.pofile(content)
@@ -101,6 +112,8 @@ class GettextHandler(SimpleCompilerFactory, Handler):
         # Msgfmt check
         if settings.FILECHECKS['POFILE_MSGFMT']:
             msgfmt_check(content, self.is_pot)
+
+        self._ensure_default_metadata(po)
 
         # Check required header fields
         required_metadata = ['Content-Type', 'Content-Transfer-Encoding']
