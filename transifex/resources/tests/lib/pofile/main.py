@@ -223,6 +223,29 @@ class TestPoFile(FormatsBaseTestCase):
         self.assertEqual(compiled_template,
                 expected_compiled_template)
 
+    def test_po_compile_erp_stable_profile(self):
+        handler = self._test_po_save2db()
+        handler.bind_resource(self.resource)
+        handler.set_language(Language.objects.get(code='en_US'))
+
+        compiled_template = handler.compile(profile='erp_stable')
+        compiled_template_again = handler.compile(profile='erp_stable')
+
+        self.assertEqual(compiled_template, compiled_template_again)
+        self.assertFalse('PO-Revision-Date' in compiled_template)
+        self.assertFalse('Last-Translator' in compiled_template)
+        self.assertFalse('Project-Id-Version' in compiled_template)
+        self.assertFalse('Report-Msgid-Bugs-To' in compiled_template)
+        self.assertFalse('Language-Team' in compiled_template)
+        self.assertFalse('FIRST AUTHOR' in compiled_template)
+
+        po = polib.pofile(compiled_template)
+        msgids = [entry.msgid for entry in po]
+        self.assertEqual(msgids, sorted(msgids))
+        self.assertEqual(msgids[0], 'Action')
+        for entry in po:
+            self.assertEqual(entry.occurrences, sorted(entry.occurrences))
+
     def test_po_save_and_compile(self):
         handler = self._test_po_save2db()
         self._test_po_compile(handler)

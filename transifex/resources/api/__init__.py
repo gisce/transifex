@@ -479,7 +479,10 @@ class TranslationHandler(BaseHandler):
 
         translation = Translation.get_object("get", request, r, language)
         try:
-            res = translation.get(pseudo_type=pseudo_type, mode=mode)
+            profile = request.GET.get('profile', None)
+            res = translation.get(
+                pseudo_type=pseudo_type, mode=mode, profile=profile
+            )
         except BadRequestError, e:
             return BAD_REQUEST(unicode(e))
         except FormatsBackendError, e:
@@ -655,12 +658,13 @@ class Translation(object):
             self.resource, self.language, user=self.request.user
         )
 
-    def get(self, pseudo_type, mode=None):
+    def get(self, pseudo_type, mode=None, profile=None):
         """Get a translation.
 
         Args:
             pseudo_type: The pseudo_type to use, if any.
             mode: The mode of compilation, if any.
+            profile: Optional output profile, if any.
         """
         raise NotImplementedError
 
@@ -735,7 +739,7 @@ class FileTranslation(Translation):
         )
         return response
 
-    def get(self, pseudo_type, mode=None):
+    def get(self, pseudo_type, mode=None, profile=None):
         """
         Return the requested translation as a file.
 
@@ -747,7 +751,9 @@ class FileTranslation(Translation):
         """
         try:
             fb = FormatsBackend(self.resource, self.language)
-            return fb.compile_translation(pseudo_type, mode=mode)
+            return fb.compile_translation(
+                pseudo_type, mode=mode, profile=profile
+            )
         except Exception, e:
             logger.error(unicode(e), exc_info=True)
             raise BadRequestError("Error compiling the translation file: %s" %e )
@@ -812,7 +818,8 @@ class StringTranslation(Translation):
     Handle requests for translation as strings.
     """
 
-    def get(self, start=None, end=None, pseudo_type=None, mode=None):
+    def get(self, start=None, end=None, pseudo_type=None, mode=None,
+            profile=None):
         """
         Return the requested translation in a json string.
 
@@ -823,6 +830,7 @@ class StringTranslation(Translation):
             end: End for pagination.
             pseudo_type: The pseudo_type requested.
             mode: The mode for the compilation.
+            profile: Optional output profile, if any.
         Returns:
             A dict with the translation(s).
         Raises:
@@ -830,7 +838,9 @@ class StringTranslation(Translation):
         """
         try:
             fb = FormatsBackend(self.resource, self.language)
-            template = fb.compile_translation(pseudo_type, mode=mode)
+            template = fb.compile_translation(
+                pseudo_type, mode=mode, profile=profile
+            )
         except Exception, e:
             logger.error(unicode(e), exc_info=True)
             raise BadRequestError(

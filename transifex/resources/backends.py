@@ -183,7 +183,7 @@ class FormatsBackend(object):
         except FormatError, e:
             raise FormatsBackendError(unicode(e))
 
-    def compile_translation(self, pseudo_type=None, mode=None):
+    def compile_translation(self, pseudo_type=None, mode=None, profile=None):
         """Compile the translation for a resource in a specified language.
 
         There is some extra care for PO/POT resources. If there is no
@@ -197,6 +197,8 @@ class FormatsBackend(object):
         Args:
             pseudo_type: The pseudo_type (if any).
             mode: The mode for compiling this translation.
+            profile: Optional output profile for format-specific
+                normalization.
         Returns:
             The compiled template.
         """
@@ -207,7 +209,9 @@ class FormatsBackend(object):
         )
         handler.bind_resource(self.resource)
         handler.set_language(self.language)
-        content = handler.compile(pseudo=pseudo_type, mode=mode)
+        content = handler.compile(
+            pseudo=pseudo_type, mode=mode, profile=profile
+        )
         return content if isinstance(content, basestring) else ''
 
 
