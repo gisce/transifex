@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db import IntegrityError
 from django.db import transaction
@@ -31,6 +32,53 @@ from transifex.txcommon import notifications as txnotification
 
 from transifex.txcommon.decorators import one_perm_required_or_403, access_off
 from transifex.txcommon.log import logger
+
+
+LANGUAGE_DETAIL_SORTS = ('completion', 'name', 'last_update', 'priority')
+
+
+def _sort_language_stats(statslist, sort, direction):
+    """Sort language resource stats before template pagination."""
+    reverse = direction == 'desc'
+
+    def resource_name(stat):
+        return (stat.resource.project.name or '', stat.resource.name or '',
+            stat.resource.slug or '')
+
+    def priority_level(stat):
+        try:
+            priority = stat.resource.priority
+        except ObjectDoesNotExist:
+            return 0
+        return priority.level if priority else 0
+
+    def stat_key(stat):
+        if sort == 'last_update':
+            return (stat.last_update is not None, stat.last_update)
+        elif sort == 'priority':
+            return priority_level(stat)
+        return stat.translated_perc
+
+    statslist = sorted(statslist, key=resource_name)
+    if sort == 'name':
+        return sorted(statslist, key=resource_name, reverse=reverse)
+
+    return sorted(statslist, key=stat_key, reverse=reverse)
+
+
+def _language_detail_sort_urls(request, active_sort, active_direction):
+    sort_urls = {}
+    for sort in LANGUAGE_DETAIL_SORTS:
+        params = request.GET.copy()
+        if 'page' in params:
+            del params['page']
+        params['sort'] = sort
+        if sort == active_sort:
+            params['dir'] = active_direction == 'asc' and 'desc' or 'asc'
+        else:
+            params['dir'] = sort == 'last_update' and 'desc' or 'asc'
+        sort_urls[sort] = '?%s' % params.urlencode()
+    return sort_urls
 
 
 def team_off(request, project, *args, **kwargs):
@@ -195,6 +243,12 @@ def team_detail(request, project_slug, language_code):
     project = get_object_or_404(Project.objects.select_related(), slug=project_slug)
     language = Language.objects.by_code_or_alias_or_404(language_code)
     team = Team.objects.get_or_none(project, language.code)
+    sort = request.GET.get('sort', 'completion')
+    direction = request.GET.get('dir', 'asc')
+    if sort not in LANGUAGE_DETAIL_SORTS:
+        sort = 'completion'
+    if direction not in ('asc', 'desc'):
+        direction = 'asc'
 
     filter_form = ProjectsFilterForm(project, request.GET)
 
@@ -244,6 +298,7 @@ def team_detail(request, project_slug, language_code):
             untranslated=resource.total_entities,
         )
         statslist.append(rl)
+    statslist = _sort_language_stats(statslist, sort, direction)
 
     return render_to_response("teams/team_detail.html", {
         "project": project,
@@ -255,6 +310,10 @@ def team_detail(request, project_slug, language_code):
         "filter_form": filter_form,
         "total_entries": total_entries,
         "coordinators": coordinators,
+        "language_stats_sort": sort,
+        "language_stats_direction": direction,
+        "language_stats_sort_urls": _language_detail_sort_urls(request, sort,
+            direction),
     }, context_instance=RequestContext(request))
 
 @access_off(team_off)
@@ -770,4 +829,3 @@ def team_request_deny(request, project_slug, language_code):
 
     return HttpResponseRedirect(reverse("project_detail",
                                         args=[project_slug,]))
-
