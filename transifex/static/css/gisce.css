@@ -119,7 +119,7 @@ span.buttonized,
 .microform input[type="submit"] {
   border-color: #b9c6d0;
   border-radius: 4px;
-  background: #f7f9fb;
+  background-color: #f7f9fb;
   color: #2f3b46;
   text-shadow: none;
 }
@@ -131,7 +131,7 @@ input.buttonized:hover,
 input.buttonized:focus,
 .microform input[type="submit"]:hover {
   border-color: #7ca5c4;
-  background: #eef5fa;
+  background-color: #eef5fa;
   color: #1d4f77;
 }
 
@@ -396,6 +396,14 @@ div.actions_popup div.stats_wrapper {
 
 div.actions_popup div.more_actions ul {
   width: 320px;
+}
+
+#facebox {
+  z-index: 10001;
+}
+
+#facebox_overlay {
+  z-index: 10000;
 }
 
 #facebox .content {
