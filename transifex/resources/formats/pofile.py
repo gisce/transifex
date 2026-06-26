@@ -349,6 +349,23 @@ class GettextHandler(SimpleCompilerFactory, Handler):
 class GettextCompiler(PluralCompiler):
     """Base compiler for gettext files."""
 
+    ERP_STABLE_PROFILE = 'erp_stable'
+    ERP_STABLE_METADATA = [
+        'Language',
+        'Content-Type',
+        'Content-Transfer-Encoding',
+        'Plural-Forms',
+    ]
+    ERP_VOLATILE_METADATA = [
+        'Project-Id-Version',
+        'Report-Msgid-Bugs-To',
+        'POT-Creation-Date',
+        'PO-Revision-Date',
+        'Last-Translator',
+        'Language-Team',
+        'MIME-Version',
+    ]
+
     def _pre_compile(self, content):
         super(GettextCompiler, self)._pre_compile(content)
         self.po = polib.pofile(content)
@@ -428,6 +445,53 @@ class GettextCompiler(PluralCompiler):
             entry.msgstr_plural = plural_keys
         return unicode(self.po)
 
+    def _is_erp_stable_profile(self):
+        return getattr(self, 'profile', None) == self.ERP_STABLE_PROFILE
+
+    def _post_compile(self, content=None):
+        if self._is_erp_stable_profile():
+            self._apply_erp_stable_profile()
+
+    def _sorted_multiline(self, value):
+        if not value:
+            return value
+        lines = [line for line in value.splitlines() if line]
+        lines.sort()
+        return '\n'.join(lines)
+
+    def _stable_entry_key(self, entry):
+        return (
+            entry.msgid or '',
+            entry.msgctxt or '',
+            entry.msgid_plural or '',
+        )
+
+    def _apply_erp_stable_profile(self):
+        po = polib.pofile(self.compiled_template)
+        po.encoding = self.format_encoding
+        po.header = ''
+        po.metadata_is_fuzzy = 0
+
+        stable_metadata = {}
+        for key in self.ERP_STABLE_METADATA:
+            if key in po.metadata:
+                stable_metadata[key] = po.metadata[key]
+        for key in self.ERP_VOLATILE_METADATA:
+            if key in po.metadata:
+                del po.metadata[key]
+        po.metadata.clear()
+        for key in self.ERP_STABLE_METADATA:
+            if key in stable_metadata:
+                po.metadata[key] = stable_metadata[key]
+
+        po[:] = sorted(po, key=self._stable_entry_key)
+        for entry in po:
+            entry.occurrences = sorted(entry.occurrences)
+            entry.flags = sorted(entry.flags)
+            entry.comment = self._sorted_multiline(entry.comment)
+            entry.tcomment = self._sorted_multiline(entry.tcomment)
+        self.compiled_template = unicode(po)
+
 
 class PoCompiler(GettextCompiler):
     """Compiler for PO files."""
@@ -439,6 +503,8 @@ class PoCompiler(GettextCompiler):
         them with the rest of the text.
         """
         super(PoCompiler, self)._post_compile()
+        if self._is_erp_stable_profile():
+            return
         from transifex.addons.copyright.models import Copyright
         c = Copyright.objects.filter(
             resource=self.resource, language=self.language

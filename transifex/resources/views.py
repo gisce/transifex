@@ -430,6 +430,7 @@ def get_translation_file(request, project_slug, resource_slug, lang_code,
 
     try:
         fb = FormatsBackend(resource, language)
+        kwargs['profile'] = request.GET.get('profile')
         template = fb.compile_translation(**kwargs)
     except Exception, e:
         messages.error(request, "Error compiling translation file.")
@@ -470,7 +471,9 @@ def get_pot_file(request, project_slug, resource_slug):
     )
     try:
         fb = FormatsBackend(resource, None)
-        template = fb.compile_translation()
+        template = fb.compile_translation(
+            profile=request.GET.get('profile')
+        )
     except Exception, e:
         messages.error(request, _("Error compiling the pot file."))
         logger.error(

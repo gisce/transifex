@@ -164,6 +164,13 @@ class FormatsBackend(object):
             resource, language, filename=filename
         )
 
+    def _effective_compilation_profile(self, profile):
+        """Return the explicit profile or the project's default profile."""
+        if profile:
+            return profile
+        project = getattr(self.resource, 'project', None)
+        return getattr(project, 'compilation_profile', None)
+
     def _import_content(self, handler, content, is_source):
         """Import content to the database.
 
@@ -183,7 +190,7 @@ class FormatsBackend(object):
         except FormatError, e:
             raise FormatsBackendError(unicode(e))
 
-    def compile_translation(self, pseudo_type=None, mode=None):
+    def compile_translation(self, pseudo_type=None, mode=None, profile=None):
         """Compile the translation for a resource in a specified language.
 
         There is some extra care for PO/POT resources. If there is no
@@ -197,6 +204,8 @@ class FormatsBackend(object):
         Args:
             pseudo_type: The pseudo_type (if any).
             mode: The mode for compiling this translation.
+            profile: Optional output profile for format-specific
+                normalization.
         Returns:
             The compiled template.
         """
@@ -207,7 +216,10 @@ class FormatsBackend(object):
         )
         handler.bind_resource(self.resource)
         handler.set_language(self.language)
-        content = handler.compile(pseudo=pseudo_type, mode=mode)
+        content = handler.compile(
+            pseudo=pseudo_type, mode=mode,
+            profile=self._effective_compilation_profile(profile)
+        )
         return content if isinstance(content, basestring) else ''
 
 

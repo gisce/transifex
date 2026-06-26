@@ -153,6 +153,10 @@ class Project(models.Model):
     """
     A project is a group of translatable resources.
     """
+    COMPILATION_PROFILE_CHOICES = (
+        ('', _('Default')),
+        ('erp_stable', _('ERP stable PO/POT output')),
+    )
 
     private = models.BooleanField(default=False, verbose_name=_('Private'),
         help_text=_('A private project is visible only by you and your team. '
@@ -194,6 +198,10 @@ class Project(models.Model):
     logo = ThumbnailerImageField(_('Logo'), blank=True, null=True,
         upload_to=upload_to_mugshot, resize_source=PROJECT_LOGO_SETTINGS,
         help_text=_('A logo image displayed for the project.'))
+    compilation_profile = models.CharField(
+        _('Compilation profile'), max_length=32, blank=True, null=True,
+        choices=COMPILATION_PROFILE_CHOICES,
+        help_text=_('Default output profile for downloaded translation files.'))
 
     # Relations
     maintainers = models.ManyToManyField(User, verbose_name=_('Maintainers'),

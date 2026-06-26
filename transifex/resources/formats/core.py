@@ -296,7 +296,8 @@ class Handler(object):
         self.suggestions.add(GenericTranslation(*args, **kwargs))
 
     @need_resource
-    def compile(self, language=None, pseudo=None, mode=Mode.DEFAULT):
+    def compile(self, language=None, pseudo=None, mode=Mode.DEFAULT,
+            profile=None):
         """Compile the translation for the specified language.
 
         The actual output of the compilation depends on the arguments.
@@ -305,6 +306,8 @@ class Handler(object):
             language: The language of the translation.
             pseudo: The pseudo type to use (if any).
             mode: The mode of the translation.
+            profile: Optional output profile for format-specific
+                normalization.
         Returns:
             The compiled template in the correct encoding.
         """
@@ -312,6 +315,7 @@ class Handler(object):
             language = self.language
         content = self._content_from_template(self.resource)
         compiler = self.construct_compiler(language, pseudo, mode)
+        compiler.profile = profile
         try:
             return compiler.compile(
                 content, language
