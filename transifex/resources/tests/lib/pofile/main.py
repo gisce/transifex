@@ -246,6 +246,22 @@ class TestPoFile(FormatsBaseTestCase):
         for entry in po:
             self.assertEqual(entry.occurrences, sorted(entry.occurrences))
 
+    def test_project_compilation_profile_is_used_by_backend(self):
+        self._test_po_save2db()
+        self.resource.project.compilation_profile = 'erp_stable'
+        self.resource.project.save()
+
+        backend = FormatsBackend(
+            self.resource, Language.objects.get(code='en_US')
+        )
+        compiled_template = backend.compile_translation()
+
+        self.assertFalse('PO-Revision-Date' in compiled_template)
+        self.assertFalse('Last-Translator' in compiled_template)
+        po = polib.pofile(compiled_template)
+        msgids = [entry.msgid for entry in po]
+        self.assertEqual(msgids, sorted(msgids))
+
     def test_po_save_and_compile(self):
         handler = self._test_po_save2db()
         self._test_po_compile(handler)
