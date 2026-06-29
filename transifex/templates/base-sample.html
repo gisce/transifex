@@ -9,6 +9,15 @@
 <head>
   <title>{% block title %}{% trans "Transifex" %}{% endblock %}</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <script type="text/javascript">
+    (function() {
+      try {
+        if (window.localStorage && localStorage.getItem('gisce-theme') == 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    }());
+  </script>
   {% block basecss %}
   <link media="screen" href="{% static "css/base.css" %}" type="text/css" rel="stylesheet" />
   <link media="screen" href="{% static "css/txo-style.css" %}" type="text/css" rel="stylesheet" />
@@ -38,6 +47,7 @@
   <script type="text/javascript" src="{% static "js/lib/jquery.placeholder.js" %}"></script>
   <script type="text/javascript" src="{% static "js/lib/jquery.tablesorter.min.js" %}"></script>
   <script type="text/javascript" src="{% static "js/base.js" %}"></script>
+  <script type="text/javascript" src="{% static "js/gisce-theme.js" %}"></script>
   <script type="text/javascript" src="{% static "js/lib/jquery.tipsy.js" %}"></script>
   <script type="text/javascript" src="{% static "js/lib/ajaxupload.js" %}"></script>
   <script type="text/javascript" src="{% static "js/lib/sprintf.js" %}"></script>
@@ -125,6 +135,22 @@
             </select>
     </form>
     {% endwith %}
+    <button id="theme-toggle" class="theme-toggle" type="button" title="{% trans "Switch theme" %}" aria-label="{% trans "Switch to dark mode" %}">
+      <svg class="theme-toggle-icon theme-toggle-icon-moon" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path>
+      </svg>
+      <svg class="theme-toggle-icon theme-toggle-icon-sun" aria-hidden="true" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2"></path>
+        <path d="M12 20v2"></path>
+        <path d="m4.9 4.9 1.4 1.4"></path>
+        <path d="m17.7 17.7 1.4 1.4"></path>
+        <path d="M2 12h2"></path>
+        <path d="M20 12h2"></path>
+        <path d="m6.3 17.7-1.4 1.4"></path>
+        <path d="m19.1 4.9-1.4 1.4"></path>
+      </svg>
+    </button>
     </div>
     <div id="header_trinav">
     {% block header_trinav %}
