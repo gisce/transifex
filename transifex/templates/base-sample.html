@@ -9,6 +9,15 @@
 <head>
   <title>{% block title %}{% trans "Transifex" %}{% endblock %}</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <script type="text/javascript">
+    (function() {
+      try {
+        if (window.localStorage && localStorage.getItem('gisce-theme') == 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    }());
+  </script>
   {% block basecss %}
   <link media="screen" href="{% static "css/base.css" %}" type="text/css" rel="stylesheet" />
   <link media="screen" href="{% static "css/txo-style.css" %}" type="text/css" rel="stylesheet" />
@@ -38,6 +47,7 @@
   <script type="text/javascript" src="{% static "js/lib/jquery.placeholder.js" %}"></script>
   <script type="text/javascript" src="{% static "js/lib/jquery.tablesorter.min.js" %}"></script>
   <script type="text/javascript" src="{% static "js/base.js" %}"></script>
+  <script type="text/javascript" src="{% static "js/gisce-theme.js" %}"></script>
   <script type="text/javascript" src="{% static "js/lib/jquery.tipsy.js" %}"></script>
   <script type="text/javascript" src="{% static "js/lib/ajaxupload.js" %}"></script>
   <script type="text/javascript" src="{% static "js/lib/sprintf.js" %}"></script>
@@ -125,6 +135,9 @@
             </select>
     </form>
     {% endwith %}
+    <button id="theme-toggle" class="theme-toggle" type="button" title="{% trans "Switch theme" %}" aria-label="{% trans "Switch to dark mode" %}">
+      <span class="theme-toggle-icon"></span>
+    </button>
     </div>
     <div id="header_trinav">
     {% block header_trinav %}
