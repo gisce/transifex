@@ -32,7 +32,7 @@
   <script type="text/javascript" src="{% static "lotte/js/jquery.dataTables.customFullNumbersPagination.js" %}"></script>
   <script type="text/javascript" src="{% static "lotte/js/jquery.dotimeout.min.js" %}"></script>
   <script type="text/javascript" src="{% static "lotte/js/shortcut.js" %}"></script>
-  <script type="text/javascript" src="{% static "lotte/js/tx.lotte2.js" %}"></script>
+  <script type="text/javascript" src="{% static "lotte/js/tx.lotte2.js" %}?v=pingu-completion-2"></script>
   <script type="text/javascript" src="{% static "lotte/js/footpanel.js" %}"></script>
   <script type="text/javascript" src="{% static "lotte/js/jquery.hoverIntent.js" %}"></script>
   <script type="text/javascript" src="{% static "lotte/js/jquery.whitespaceHighlight.js" %}"></script>
@@ -401,7 +401,9 @@
                     stringset.translated = translated;
                     stringset.untranslated = untranslated;
                     stringset.reviewed = reviewed;
-                    stringset.syncCompletionState();
+                    if (typeof stringset.syncCompletionState === 'function') {
+                        stringset.syncCompletionState();
+                    }
 
                     // Draw the table
                     fnCallback(parsed_data);
