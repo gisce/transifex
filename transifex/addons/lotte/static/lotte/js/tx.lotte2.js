@@ -76,7 +76,13 @@ function saveButtonClickHandler() {
 }
 
 function getPinguCelebrationConfig() {
-    return window.pinguCelebration || {};
+    if (window.pinguCelebration) {
+        return window.pinguCelebration;
+    }
+    if (typeof pinguCelebration !== "undefined") {
+        return pinguCelebration;
+    }
+    return {};
 }
 
 function restartableAssetUrl(url) {
@@ -84,6 +90,11 @@ function restartableAssetUrl(url) {
         return "";
     }
     return url + (url.indexOf("?") === -1 ? "?" : "&") + "v=" + (new Date()).getTime();
+}
+
+function parseLotteCount(value) {
+    var count = parseInt(String(value || "").replace(/[^\d-]/g, ""), 10);
+    return isNaN(count) ? 0 : count;
 }
 
 function showPinguCelebration(done) {
@@ -402,6 +413,8 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
     this.to_lang = to_lang;
     /* True if there is error during saving translations */
     this.error = null;
+    this.completion_state_initialized = false;
+    this.completion_celebrated = false;
 
 /*    This array contains all the TranslationString objects of StringSet */
 /*    IMPORTANT! This keeps the table row index as a key!!! */
@@ -431,7 +444,6 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
         var messages = false;
         this_stringset = this;
         var to_update = [];
-        var was_fully_translated = this.isFullyTranslated();
         if (ts) { /* Pushing one TranslationString instance */
             to_update[0] = {'id':ts.id,
                             'translations':ts.translated_strings,}; // translations includes all plurals!
@@ -443,6 +455,17 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
                 }
         }
         if (to_update.length == 0) {
+            if (typeof callback === 'function') {
+                if (this.showCompletionCelebration(function() {
+                    callback(lotteStatus.updated);
+                })) {
+                    return;
+                }
+            } else {
+                if (this.showCompletionCelebration()) {
+                    return;
+                }
+            }
             if (typeof callback === 'undefined')
                 alert("Alrighty, all strings have been saved already");
         } else {
@@ -535,7 +558,7 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
                     // Change status to updated=True
                     lotteStatus.updated=true;
                     if (typeof callback !== 'function') {
-                        this_stringset.showCompletionCelebration(was_fully_translated);
+                        this_stringset.showCompletionCelebration();
                     }
                 },
                 error: function() {
@@ -548,7 +571,7 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
         }
         if (typeof callback === 'function') {
             if ( ! messages ) {
-                if (!this.showCompletionCelebration(was_fully_translated, function() {
+                if (!this.showCompletionCelebration(function() {
                     callback(lotteStatus.updated);
                 })) {
                     callback(lotteStatus.updated);
@@ -775,12 +798,38 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
     this.untranslated_modified = 0;
 
     this.isFullyTranslated = function() {
-        var total = this.translated + this.untranslated;
-        return total > 0 && this.untranslated == 0 && this.translated == total;
+        var translated_count = parseLotteCount(this.translated);
+        var untranslated_count = parseLotteCount(this.untranslated);
+        var total = translated_count + untranslated_count;
+
+        if (this.bound_stats && this.bound_stats.length) {
+            var displayed_total = parseLotteCount($('#total_sum', this.bound_stats).text());
+            var displayed_untranslated = parseLotteCount($('#total_untranslated', this.bound_stats).text());
+            if (displayed_total > 0) {
+                total = displayed_total;
+                untranslated_count = displayed_untranslated;
+            }
+        }
+
+        return total > 0 && untranslated_count <= 0;
     };
 
-    this.showCompletionCelebration = function(was_fully_translated, done) {
-        if (!was_fully_translated && this.isFullyTranslated()) {
+    this.syncCompletionState = function() {
+        var is_fully_translated = this.isFullyTranslated();
+        if (!this.completion_state_initialized) {
+            this.completion_celebrated = is_fully_translated;
+            this.completion_state_initialized = true;
+        } else if (!is_fully_translated) {
+            this.completion_celebrated = false;
+        }
+    };
+
+    this.showCompletionCelebration = function(done) {
+        if (!this.completion_state_initialized) {
+            this.syncCompletionState();
+        }
+        if (!this.completion_celebrated && this.isFullyTranslated()) {
+            this.completion_celebrated = true;
             return showPinguCelebration(done);
         }
         if (typeof done === "function") {
@@ -820,6 +869,7 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
                 $('#total_reviewed', this.bound_stats).html(reviewed);
                 $('#total_reviewed_perc', this.bound_stats).html(sprintf("%.02f%%", reviewed*100.0/total));
             }
+            this.syncCompletionState();
         }
     }
 
