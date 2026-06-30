@@ -75,6 +75,78 @@ function saveButtonClickHandler() {
     this_stringset.push(this_stringset.strings[table_row_id], table_row_id);
 }
 
+function getPinguCelebrationConfig() {
+    if (window.pinguCelebration) {
+        return window.pinguCelebration;
+    }
+    if (typeof pinguCelebration !== "undefined") {
+        return pinguCelebration;
+    }
+    return {};
+}
+
+function restartableAssetUrl(url) {
+    if (!url) {
+        return "";
+    }
+    return url + (url.indexOf("?") === -1 ? "?" : "&") + "v=" + (new Date()).getTime();
+}
+
+function parseLotteCount(value) {
+    var count = parseInt(String(value || "").replace(/[^\d-]/g, ""), 10);
+    return isNaN(count) ? 0 : count;
+}
+
+function showPinguCelebration(done) {
+    var config = getPinguCelebrationConfig();
+    if (!config.gifUrl) {
+        if (typeof done === "function") {
+            done();
+        }
+        return false;
+    }
+
+    var overlay = $("#pingu-celebration");
+    if (!overlay.length) {
+        overlay = $('<div id="pingu-celebration" aria-hidden="true"></div>');
+        overlay.append('<div class="pingu-celebration-card"><img alt="" /></div>');
+        $("body").append(overlay);
+        overlay.click(function() {
+            $(this).stop(true, true).fadeOut(140);
+        });
+    }
+
+    overlay.find("img").attr("src", restartableAssetUrl(config.gifUrl));
+    overlay.stop(true, true).fadeIn(120);
+
+    if (config.soundUrl) {
+        try {
+            var audio = document.getElementById("pingu-celebration-audio");
+            if (!audio) {
+                audio = document.createElement("audio");
+                audio.id = "pingu-celebration-audio";
+                audio.preload = "auto";
+                audio.src = config.soundUrl;
+                document.body.appendChild(audio);
+            }
+            audio.currentTime = 0;
+            var playResult = audio.play();
+            if (playResult && typeof playResult["catch"] === "function") {
+                playResult["catch"](function() {});
+            }
+        } catch (e) {}
+    }
+
+    window.setTimeout(function() {
+        overlay.fadeOut(220, function() {
+            if (typeof done === "function") {
+                done();
+            }
+        });
+    }, 3200);
+    return true;
+}
+
 function refreshSpellcheckDiv() {
   new_str = "";
   $.each(str_as_list, function(index, value){
@@ -341,6 +413,8 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
     this.to_lang = to_lang;
     /* True if there is error during saving translations */
     this.error = null;
+    this.completion_state_initialized = false;
+    this.completion_celebrated = false;
 
 /*    This array contains all the TranslationString objects of StringSet */
 /*    IMPORTANT! This keeps the table row index as a key!!! */
@@ -381,6 +455,17 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
                 }
         }
         if (to_update.length == 0) {
+            if (typeof callback === 'function') {
+                if (this.showCompletionCelebration(function() {
+                    callback(lotteStatus.updated);
+                })) {
+                    return;
+                }
+            } else {
+                if (this.showCompletionCelebration()) {
+                    return;
+                }
+            }
             if (typeof callback === 'undefined')
                 alert("Alrighty, all strings have been saved already");
         } else {
@@ -472,6 +557,9 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
                     this_stringset.updateStats(true);
                     // Change status to updated=True
                     lotteStatus.updated=true;
+                    if (typeof callback !== 'function') {
+                        this_stringset.showCompletionCelebration();
+                    }
                 },
                 error: function() {
                     alert("Error saving new translation.");
@@ -482,9 +570,13 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
             });
         }
         if (typeof callback === 'function') {
-            if ( ! messages )
-                callback(lotteStatus.updated);
-            else
+            if ( ! messages ) {
+                if (!this.showCompletionCelebration(function() {
+                    callback(lotteStatus.updated);
+                })) {
+                    callback(lotteStatus.updated);
+                }
+            } else
                 alert("There were a few warnings or errors. Check them out before exiting lotte.");
         }
     }
@@ -705,6 +797,47 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
     this.translated_modified = 0;
     this.untranslated_modified = 0;
 
+    this.isFullyTranslated = function() {
+        var translated_count = parseLotteCount(this.translated);
+        var untranslated_count = parseLotteCount(this.untranslated);
+        var total = translated_count + untranslated_count;
+
+        if (this.bound_stats && this.bound_stats.length) {
+            var displayed_total = parseLotteCount($('#total_sum', this.bound_stats).text());
+            var displayed_untranslated = parseLotteCount($('#total_untranslated', this.bound_stats).text());
+            if (displayed_total > 0) {
+                total = displayed_total;
+                untranslated_count = displayed_untranslated;
+            }
+        }
+
+        return total > 0 && untranslated_count <= 0;
+    };
+
+    this.syncCompletionState = function() {
+        var is_fully_translated = this.isFullyTranslated();
+        if (!this.completion_state_initialized) {
+            this.completion_celebrated = is_fully_translated;
+            this.completion_state_initialized = true;
+        } else if (!is_fully_translated) {
+            this.completion_celebrated = false;
+        }
+    };
+
+    this.showCompletionCelebration = function(done) {
+        if (!this.completion_state_initialized) {
+            this.syncCompletionState();
+        }
+        if (!this.completion_celebrated && this.isFullyTranslated()) {
+            this.completion_celebrated = true;
+            return showPinguCelebration(done);
+        }
+        if (typeof done === "function") {
+            done();
+        }
+        return false;
+    };
+
     /* StringSet.updateStats(later=false) */
     this.updateStats = function(later) {
         later = false;
@@ -736,6 +869,7 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
                 $('#total_reviewed', this.bound_stats).html(reviewed);
                 $('#total_reviewed_perc', this.bound_stats).html(sprintf("%.02f%%", reviewed*100.0/total));
             }
+            this.syncCompletionState();
         }
     }
 

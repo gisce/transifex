@@ -32,7 +32,7 @@
   <script type="text/javascript" src="{% static "lotte/js/jquery.dataTables.customFullNumbersPagination.js" %}"></script>
   <script type="text/javascript" src="{% static "lotte/js/jquery.dotimeout.min.js" %}"></script>
   <script type="text/javascript" src="{% static "lotte/js/shortcut.js" %}"></script>
-  <script type="text/javascript" src="{% static "lotte/js/tx.lotte2.js" %}"></script>
+  <script type="text/javascript" src="{% static "lotte/js/tx.lotte2.js" %}?v=pingu-completion-2"></script>
   <script type="text/javascript" src="{% static "lotte/js/footpanel.js" %}"></script>
   <script type="text/javascript" src="{% static "lotte/js/jquery.hoverIntent.js" %}"></script>
   <script type="text/javascript" src="{% static "lotte/js/jquery.whitespaceHighlight.js" %}"></script>
@@ -65,6 +65,10 @@
     var untranslated_strings = {{ untranslated_strings }};
     var reviewed_strings = {{ reviewed_strings }};
     var total_strings = translated_strings + untranslated_strings;
+    var pinguCelebration = {
+        gifUrl: '{% static "images/pingu.gif" %}',
+        soundUrl: '{% static "sounds/pingu.mp3" %}'
+    };
     /* obj for holding default values of edited text areas. works like a hastable/dict */
     var current_defaults = {};
     /* var to keep filter state */
@@ -397,6 +401,9 @@
                     stringset.translated = translated;
                     stringset.untranslated = untranslated;
                     stringset.reviewed = reviewed;
+                    if (typeof stringset.syncCompletionState === 'function') {
+                        stringset.syncCompletionState();
+                    }
 
                     // Draw the table
                     fnCallback(parsed_data);
