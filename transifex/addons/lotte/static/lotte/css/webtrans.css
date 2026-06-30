@@ -7,6 +7,46 @@
 font-size: 1.077em;
 }
 
+#pingu-celebration {
+  position: fixed;
+  z-index: 1000001;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: none;
+  background: rgba(7, 16, 20, 0.58);
+  cursor: pointer;
+}
+
+.pingu-celebration-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: 86vw;
+  max-height: 78vh;
+  padding: 18px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+}
+
+.pingu-celebration-card img {
+  display: block;
+  width: 498px;
+  max-width: 78vw;
+  max-height: 66vh;
+  border-radius: 8px;
+}
+
+html[data-theme="dark"] .pingu-celebration-card {
+  border-color: rgba(169, 200, 174, 0.22);
+  background: rgba(17, 29, 35, 0.96);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.48);
+}
+
 .plural_title {
   color:#B65D0E;
 }

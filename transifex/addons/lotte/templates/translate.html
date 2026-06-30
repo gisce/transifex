@@ -65,6 +65,10 @@
     var untranslated_strings = {{ untranslated_strings }};
     var reviewed_strings = {{ reviewed_strings }};
     var total_strings = translated_strings + untranslated_strings;
+    var pinguCelebration = {
+        gifUrl: '{% static "images/pingu.gif" %}',
+        soundUrl: '{% static "sounds/pingu.mp3" %}'
+    };
     /* obj for holding default values of edited text areas. works like a hastable/dict */
     var current_defaults = {};
     /* var to keep filter state */

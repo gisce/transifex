@@ -75,6 +75,67 @@ function saveButtonClickHandler() {
     this_stringset.push(this_stringset.strings[table_row_id], table_row_id);
 }
 
+function getPinguCelebrationConfig() {
+    return window.pinguCelebration || {};
+}
+
+function restartableAssetUrl(url) {
+    if (!url) {
+        return "";
+    }
+    return url + (url.indexOf("?") === -1 ? "?" : "&") + "v=" + (new Date()).getTime();
+}
+
+function showPinguCelebration(done) {
+    var config = getPinguCelebrationConfig();
+    if (!config.gifUrl) {
+        if (typeof done === "function") {
+            done();
+        }
+        return false;
+    }
+
+    var overlay = $("#pingu-celebration");
+    if (!overlay.length) {
+        overlay = $('<div id="pingu-celebration" aria-hidden="true"></div>');
+        overlay.append('<div class="pingu-celebration-card"><img alt="" /></div>');
+        $("body").append(overlay);
+        overlay.click(function() {
+            $(this).stop(true, true).fadeOut(140);
+        });
+    }
+
+    overlay.find("img").attr("src", restartableAssetUrl(config.gifUrl));
+    overlay.stop(true, true).fadeIn(120);
+
+    if (config.soundUrl) {
+        try {
+            var audio = document.getElementById("pingu-celebration-audio");
+            if (!audio) {
+                audio = document.createElement("audio");
+                audio.id = "pingu-celebration-audio";
+                audio.preload = "auto";
+                audio.src = config.soundUrl;
+                document.body.appendChild(audio);
+            }
+            audio.currentTime = 0;
+            var playResult = audio.play();
+            if (playResult && typeof playResult["catch"] === "function") {
+                playResult["catch"](function() {});
+            }
+        } catch (e) {}
+    }
+
+    window.setTimeout(function() {
+        overlay.fadeOut(220, function() {
+            if (typeof done === "function") {
+                done();
+            }
+        });
+    }, 3200);
+    return true;
+}
+
 function refreshSpellcheckDiv() {
   new_str = "";
   $.each(str_as_list, function(index, value){
@@ -370,6 +431,7 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
         var messages = false;
         this_stringset = this;
         var to_update = [];
+        var was_fully_translated = this.isFullyTranslated();
         if (ts) { /* Pushing one TranslationString instance */
             to_update[0] = {'id':ts.id,
                             'translations':ts.translated_strings,}; // translations includes all plurals!
@@ -472,6 +534,9 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
                     this_stringset.updateStats(true);
                     // Change status to updated=True
                     lotteStatus.updated=true;
+                    if (typeof callback !== 'function') {
+                        this_stringset.showCompletionCelebration(was_fully_translated);
+                    }
                 },
                 error: function() {
                     alert("Error saving new translation.");
@@ -482,9 +547,13 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
             });
         }
         if (typeof callback === 'function') {
-            if ( ! messages )
-                callback(lotteStatus.updated);
-            else
+            if ( ! messages ) {
+                if (!this.showCompletionCelebration(was_fully_translated, function() {
+                    callback(lotteStatus.updated);
+                })) {
+                    callback(lotteStatus.updated);
+                }
+            } else
                 alert("There were a few warnings or errors. Check them out before exiting lotte.");
         }
     }
@@ -704,6 +773,21 @@ function StringSet(json_object, push_url, from_lang, to_lang) {
 
     this.translated_modified = 0;
     this.untranslated_modified = 0;
+
+    this.isFullyTranslated = function() {
+        var total = this.translated + this.untranslated;
+        return total > 0 && this.untranslated == 0 && this.translated == total;
+    };
+
+    this.showCompletionCelebration = function(was_fully_translated, done) {
+        if (!was_fully_translated && this.isFullyTranslated()) {
+            return showPinguCelebration(done);
+        }
+        if (typeof done === "function") {
+            done();
+        }
+        return false;
+    };
 
     /* StringSet.updateStats(later=false) */
     this.updateStats = function(later) {
