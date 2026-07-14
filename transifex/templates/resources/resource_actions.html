@@ -130,9 +130,9 @@
 
     <div class="stats_wrapper">
       {% with 390 as barwidth %}
-      <div class="stats tipsy_enable" style='width:{{ barwidth|add:"60" }}px;' title="{% trans "Translated: " %}{{ stats.translated }}<br/>{% trans "Remaining: " %}{{ stats.untranslated }}{% if show_reviewed_stats %}<br/>{% trans "Reviewed: " %}{{ stats.reviewed }}{% endif %}">
+      <div class="stats tipsy_enable {% ifequal stats.translated stats.total %}progress-complete{% else %}{% ifequal stats.translated 0 %}progress-empty{% else %}progress-partial{% endifequal %}{% endifequal %}" style='width:{{ barwidth|add:"170" }}px;' title="{% trans "Translated: " %}{{ stats.translated }}<br/>{% trans "Remaining: " %}{{ stats.untranslated }}{% if show_reviewed_stats %}<br/>{% trans "Reviewed: " %}{{ stats.reviewed }}{% endif %}">
           <div class="stats_string_resource_actions">
-              {{ stats.translated|percentage:stats.total }}
+              {% blocktrans with stats.translated|percentage:stats.total as percent and stats.untranslated|intcomma as pending %}{{ percent }} &middot; {{ pending }} remaining{% endblocktrans %}
           </div>
           {% stats_bar_actions stats barwidth %}
       </div>

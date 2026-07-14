@@ -134,7 +134,7 @@ class ResourcesTemplateTests(BaseTestCase):
         resp = self.client['anonymous'].get(self.urls['resource'])
         self.assertContains(resp, self.language_ar.name, status_code=200,
             msg_prefix="Do not show 0% languages if there is no respective team.")
-        self.assertNotContains(resp, '<div class="stats_string_resource"> 0% </div>')
+        self.assertNotContains(resp, '0% &middot; 0 remaining')
 
         # Test with a new team.
         t = Team.objects.create(language=self.language_ar, project=self.project,
@@ -143,4 +143,18 @@ class ResourcesTemplateTests(BaseTestCase):
         self.assertContains(resp, self.language_ar.name, status_code=200,
             msg_prefix="Show a 0% language if there is a respective team.")
         self.assertContains(resp, '<div class="stats_string_resource">\n'
-            '    0%\n  </div>')
+            '    0% &middot; 0 remaining\n  </div>')
+
+    def test_resource_details_stats_show_remaining_count(self):
+        """Progress labels should expose both percentage and pending strings."""
+        resp = self.client['anonymous'].get(self.urls['resource'])
+        self.assertTemplateUsed(resp, 'resources/resource_detail.html')
+        self.assertContains(resp, '&middot;')
+        self.assertContains(resp, 'remaining')
+
+    def test_resource_actions_stats_show_remaining_count(self):
+        """Resource action progress labels should not rely only on tooltips."""
+        resp = self.client['maintainer'].get(self.urls['resource_actions'])
+        self.assertTemplateUsed(resp, 'resources/resource_actions.html')
+        self.assertContains(resp, '&middot;')
+        self.assertContains(resp, 'remaining')

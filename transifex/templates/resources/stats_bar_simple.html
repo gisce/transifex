@@ -1,9 +1,10 @@
 {% load i18n %}
+{% load humanize %}
 {% load statistics_resources %}
 
-<div class="stats tipsy_enable" style='width:{{ width|add:"40" }}px;' title="{% trans "Translated: " %}{{ trans }}<br />{% trans "Untranslated: " %}{{ untrans }}{% if show_reviewed_stats %}<br />{% trans "Reviewed: " %}{{ reviewed }}{% endif %}">
+<div class="stats tipsy_enable {% ifequal trans_percent 100 %}progress-complete{% else %}{% ifequal trans_percent 0 %}progress-empty{% else %}progress-partial{% endifequal %}{% endifequal %}" style='width:{{ width|add:"140" }}px;' title="{% trans "Translated: " %}{{ trans }}<br />{% trans "Untranslated: " %}{{ untrans }}{% if show_reviewed_stats %}<br />{% trans "Reviewed: " %}{{ reviewed }}{% endif %}">
   <div class="stats_string_resource">
-    {{ trans_percent }}%
+    {% blocktrans with trans_percent as percent and untrans|intcomma as pending %}{{ percent }}% &middot; {{ pending }} remaining{% endblocktrans %}
   </div>
 
   <div class="graph_resource" style="width: {{width}}px">

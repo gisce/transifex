@@ -223,7 +223,7 @@ div.graph_resource {
   margin: 0px;
   padding: 0px;
   margin-right: 1px; /* Due to the right border of div.untranslated_comp */
-  background-color: #eee;
+  background-color: #f0ad4e;
   -moz-box-shadow:    inset 1px 1px 5px #ddd;
   -webkit-box-shadow: inset 1px 1px 5px #ddd;
   box-shadow:         inset 1px 1px 5px #ddd;
@@ -237,9 +237,10 @@ div.stats_string_resource{
   z-index: 2;
   padding-left: 0.8em; 
   font-size: 0.923em;
-  color: #69916a;
+  color: #555;
   height: 12px;
   line-height: 12px;
+  white-space: nowrap;
 }
 
 div.graph_resource_actions {
@@ -248,7 +249,7 @@ div.graph_resource_actions {
   height: 26px;
   margin: 0px;
   padding: 0px;
-  background-color: #eee;
+  background-color: #f0ad4e;
   margin-right: 1px; /* Due to the right border of div.untranslated_comp */
   -webkit-border-radius: 2px;
   -moz-border-radius: 2px;
@@ -263,10 +264,26 @@ div.stats_string_resource_actions{
   z-index: 2;
   padding-left: 0.8em; 
   font-size: 140%;
-  color: #69916a;
+  color: #555;
   height: 22px;
   line-height: 22px;
 	padding-top: 3px;
+  white-space: nowrap;
+}
+
+div.progress-empty div.graph_resource,
+div.progress-empty div.graph_resource_actions {
+  background-color: #d9534f;
+}
+
+div.progress-complete div.graph_resource,
+div.progress-complete div.graph_resource_actions {
+  background-color: #80b66a;
+}
+
+div.progress-complete div.stats_string_resource,
+div.progress-complete div.stats_string_resource_actions {
+  color: #4f7f42;
 }
 
 div.team-statbar{margin-bottom: 1em;}
